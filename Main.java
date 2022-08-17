@@ -1,26 +1,30 @@
 package numbers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     final static String SUPPORTED_REQUESTS = """
             
             Supported requests:
-            - enter a natural number to know its properties;
+            - enter a natural number to know its properties;\s
             - enter two natural numbers to obtain the properties of the list:
               * the first parameter represents a starting number;
               * the second parameter shows how many consecutive numbers are to be printed;
             - two natural numbers and a property to search for;
+            - two natural numbers and two properties to search for;
             - separate the parameters with one space;
             - enter 0 to exit.""";
 
-    final static ArrayList<String> AVAILABLE_PROPERTIES = new ArrayList<>(Arrays.asList("EVEN", "ODD", "BUZZ", "DUCK", "PALINDROMIC", "GAPFUL", "SPY"));
+    final static ArrayList<String> AVAILABLE_PROPERTIES = new ArrayList<>(
+            Arrays.asList("EVEN", "ODD", "BUZZ", "DUCK", "PALINDROMIC", "GAPFUL", "SPY", "SUNNY", "SQUARE"));
+
     final static String[] ERROR_MESSAGES = {
             "\nThe first parameter should be a natural number or zero.",
             "\nThe second parameter should be a natural number.",
-            "\nThe property [%s] is wrong.\nAvailable properties: " + AVAILABLE_PROPERTIES
+            "\nThe property [%s] is wrong.\nAvailable properties: " + AVAILABLE_PROPERTIES,
+            "\nThe properties %s are wrong.\nAvailable properties: " + AVAILABLE_PROPERTIES,
+            "\nThe request contains mutually exclusive properties: %s\nThere are no numbers with these properties."
+
     };
     public static void welcome() {
         System.out.println("Welcome to Amazing Numbers!\n" + SUPPORTED_REQUESTS);
@@ -28,16 +32,15 @@ public class Main {
 
 
 
-    public static boolean inputNumber() {
+    public static void start() {
+        welcome();
         while (true) {
             System.out.print("\nEnter a requests: ");
             Scanner scanner = new Scanner(System.in);
             String[] strings = scanner.nextLine().split(" ");
-//            if (strings[0].isEmpty()) {
-//
-//            } else
             if (strings[0].equals("0")) {
-                return false;
+                System.out.println("\nGoodbye!");
+                return;
             } else {
                 switch (strings.length) {
                     case 1:
@@ -47,7 +50,10 @@ public class Main {
                         check(strings[0], strings[1]);
                         break;
                     case 3:
-                        check(strings);
+                        check(strings[0], strings[1], strings[2]);
+                        break;
+                    case 4:
+                        check(strings[0], strings[1], new String[]{strings[2].toUpperCase(), strings[3].toUpperCase()});
                         break;
                     case 0:
                         System.out.println(SUPPORTED_REQUESTS);
@@ -88,18 +94,55 @@ public class Main {
         return;
     }
 
-    public static void check(String[] strings) {
-        if (new Scanner(strings[0]).hasNextLong()) {
-            long number = Long.parseLong(strings[0]);
+    public static void check(String numberString, String countString, String property) {
+        if (new Scanner(numberString).hasNextLong()) {
+            long number = Long.parseLong(numberString);
             if (number > 0) {
-                if (new Scanner(strings[1]).hasNextLong()) {
-                    long count = Long.parseLong(strings[1]);
+                if (new Scanner(countString).hasNextLong()) {
+                    long count = Long.parseLong(countString);
                     if (count > 0) {
-                        if (AVAILABLE_PROPERTIES.contains(strings[2].toUpperCase())) {
-                            propertiesOf(number, count, strings[2]);
+                        if (AVAILABLE_PROPERTIES.contains(property.toUpperCase())) {
+                            propertiesOf(number, count, property);
                             return;
                         }
-                        System.out.println(ERROR_MESSAGES[2].formatted(strings[2].toUpperCase()));
+                        System.out.println(ERROR_MESSAGES[2].formatted(property.toUpperCase()));
+                        return;
+                    }
+                }
+                System.out.println(ERROR_MESSAGES[1]);
+                return;
+            }
+        }
+        System.out.println(ERROR_MESSAGES[0]);
+        return;
+    }
+
+    public static void check(String numberString, String countString, String[] properties) {
+        if (new Scanner(numberString).hasNextLong()) {
+            long number = Long.parseLong(numberString);
+            if (number > 0) {
+                if (new Scanner(countString).hasNextLong()) {
+                    long count = Long.parseLong(countString);
+                    if (count > 0) {
+                        if (AVAILABLE_PROPERTIES.containsAll(List.of(properties))) {
+                            if ((properties[0].equals("EVEN") && properties[1].equals("ODD")) ||
+                                    (properties[0].equals("ODD") && properties[1].equals("EVEN")) ||
+                                    (properties[0].equals("DUCK") && properties[1].equals("SPY")) ||
+                                    (properties[0].equals("SPY") && properties[1].equals("DUCK")) ||
+                                    (properties[0].equals("SUNNY") && properties[1].equals("SQUARE")) ||
+                                    (properties[0].equals("SQUARE") && properties[1].equals("SUNNY"))) {
+                                System.out.println(ERROR_MESSAGES[4].formatted(Arrays.toString(properties)));
+                                return;
+                            }
+                            propertiesOf(number, count, properties);
+                            return;
+                        } else if (AVAILABLE_PROPERTIES.contains(properties[0])) {
+                            System.out.println(ERROR_MESSAGES[2].formatted(properties[1]));
+                        } else if (AVAILABLE_PROPERTIES.contains(properties[1])) {
+                            System.out.println(ERROR_MESSAGES[2].formatted(properties[0]));
+                        } else {
+                            System.out.println(ERROR_MESSAGES[3].formatted(Arrays.toString(properties)));
+                        }
                         return;
                     }
                 }
@@ -118,6 +161,8 @@ public class Main {
         System.out.println(" palindromic: " + isPalindromic(number));
         System.out.println("      gapful: " + isGapful(number));
         System.out.println("         spy: " + isSpy(number));
+        System.out.println("      square: " + isSquare(number));
+        System.out.println("       sunny: " + isSunny(number));
         System.out.println("        even: " + isEven(number));
         System.out.println("         odd: " + isOdd(number));
     }
@@ -139,6 +184,12 @@ public class Main {
             }
             if (isSpy(number)) {
                 System.out.print("spy, ");
+            }
+            if (isSquare(number)) {
+                System.out.print("square, ");
+            }
+            if (isSunny(number)) {
+                System.out.print("sunny, ");
             }
             if (isEven(number)) {
                 System.out.print("even\n");
@@ -166,6 +217,12 @@ public class Main {
                 break;
             case "spy":
                 isTrue = isSpy(number);
+                break;
+            case "square":
+                isTrue = isSquare(number);
+                break;
+            case "sunny":
+                isTrue = isSunny(number);
                 break;
             case "even":
                 isTrue = isEven(number);
@@ -195,6 +252,83 @@ public class Main {
                 }
                 if (isSpy(number)) {
                     System.out.print("spy, ");
+                }
+                if (isSquare(number)) {
+                    System.out.print("square, ");
+                }
+                if (isSunny(number)) {
+                    System.out.print("sunny, ");
+                }
+                if (isEven(number)) {
+                    System.out.print("even\n");
+                } else {
+                    System.out.print("odd\n");
+                }
+                i++;
+            }
+        }
+    }
+
+    public static boolean is(long number, String[] properties) {
+        ArrayList<Boolean> isTrue = new ArrayList<>();
+        for (String property: properties) {
+            switch (property.toLowerCase()) {
+                case "buzz":
+                    isTrue.add(isBuzz(number));
+                    break;
+                case "duck":
+                    isTrue.add(isDuck(number));
+                    break;
+                case "palindromic":
+                    isTrue.add(isPalindromic(number));
+                    break;
+                case "gapful":
+                    isTrue.add(isGapful(number));
+                    break;
+                case "spy":
+                    isTrue.add(isSpy(number));
+                    break;
+                case "square":
+                    isTrue.add(isSquare(number));
+                    break;
+                case "sunny":
+                    isTrue.add(isSunny(number));
+                    break;
+                case "even":
+                    isTrue.add(isEven(number));
+                    break;
+                case "odd":
+                    isTrue.add(isOdd(number));
+                    break;
+            }
+        }
+        return isTrue.get(0) && isTrue.get(1);
+    }
+
+    public static void propertiesOf(long number, long n, String[] properties) {
+        for (int i = 0; i < n; number++) {
+            if (is(number, properties)) {
+                System.out.printf("%15d is ", number);
+                if (isBuzz(number)) {
+                    System.out.print("buzz, ");
+                }
+                if (isDuck(number)) {
+                    System.out.print("duck, ");
+                }
+                if (isPalindromic(number)) {
+                    System.out.print("palindromic, ");
+                }
+                if (isGapful(number)) {
+                    System.out.print("gapful, ");
+                }
+                if (isSpy(number)) {
+                    System.out.print("spy, ");
+                }
+                if (isSquare(number)) {
+                    System.out.print("square, ");
+                }
+                if (isSunny(number)) {
+                    System.out.print("sunny, ");
                 }
                 if (isEven(number)) {
                     System.out.print("even\n");
@@ -262,9 +396,22 @@ public class Main {
         return false;
     }
 
+    public static boolean isSquare(long number) {
+        int sqrt = (int) Math.sqrt(number);
+        if (number == sqrt * sqrt) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isSunny(long number) {
+        if (isSquare(number + 1)) {
+            return true;
+        }
+        return false;
+    }
+
     public static void main(String[] args) {
-        welcome();
-        inputNumber();
-        System.out.println("\nGoodbye!");
+        start();
     }
 }
