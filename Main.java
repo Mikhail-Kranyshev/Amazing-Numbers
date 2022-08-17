@@ -6,26 +6,33 @@ public class Main {
     final static String SUPPORTED_REQUESTS = """
             
             Supported requests:
-            - enter a natural number to know its properties;\s
+            - enter a natural number to know its properties;
             - enter two natural numbers to obtain the properties of the list:
               * the first parameter represents a starting number;
               * the second parameter shows how many consecutive numbers are to be printed;
-            - two natural numbers and a property to search for;
-            - two natural numbers and two properties to search for;
+            - two natural numbers and properties to search for;
             - separate the parameters with one space;
             - enter 0 to exit.""";
 
     final static ArrayList<String> AVAILABLE_PROPERTIES = new ArrayList<>(
-            Arrays.asList("EVEN", "ODD", "BUZZ", "DUCK", "PALINDROMIC", "GAPFUL", "SPY", "SUNNY", "SQUARE"));
+            Arrays.asList("EVEN", "ODD", "BUZZ", "DUCK", "PALINDROMIC", "GAPFUL", "SPY", "SUNNY", "SQUARE", "JUMPING"));
+
 
     final static String[] ERROR_MESSAGES = {
             "\nThe first parameter should be a natural number or zero.",
             "\nThe second parameter should be a natural number.",
             "\nThe property [%s] is wrong.\nAvailable properties: " + AVAILABLE_PROPERTIES,
             "\nThe properties %s are wrong.\nAvailable properties: " + AVAILABLE_PROPERTIES,
-            "\nThe request contains mutually exclusive properties: %s\nThere are no numbers with these properties."
-
+            "\nThe request contains mutually exclusive properties: %s\nThere are no numbers with these properties.",
+            "\nThe request contains mutually exclusive properties: [%s, %s]\nThere are no numbers with these properties."
     };
+
+    final static String[][] impossible = {
+            {"EVEN", "ODD"},
+            {"SQUARE", "SUNNY"},
+            {"DUCK", "SPY"},
+    };
+
     public static void welcome() {
         System.out.println("Welcome to Amazing Numbers!\n" + SUPPORTED_REQUESTS);
     }
@@ -52,8 +59,12 @@ public class Main {
                     case 3:
                         check(strings[0], strings[1], strings[2]);
                         break;
-                    case 4:
-                        check(strings[0], strings[1], new String[]{strings[2].toUpperCase(), strings[3].toUpperCase()});
+                    case 4, 5, 6, 7, 8, 9, 10:
+                        String[] properties = new String[strings.length - 2];
+                        for (int i = 2; i < strings.length; i++) {
+                            properties[i - 2] = strings[i].toUpperCase();
+                        }
+                        check(strings[0], strings[1], properties);
                         break;
                     case 0:
                         System.out.println(SUPPORTED_REQUESTS);
@@ -125,23 +136,26 @@ public class Main {
                     long count = Long.parseLong(countString);
                     if (count > 0) {
                         if (AVAILABLE_PROPERTIES.containsAll(List.of(properties))) {
-                            if ((properties[0].equals("EVEN") && properties[1].equals("ODD")) ||
-                                    (properties[0].equals("ODD") && properties[1].equals("EVEN")) ||
-                                    (properties[0].equals("DUCK") && properties[1].equals("SPY")) ||
-                                    (properties[0].equals("SPY") && properties[1].equals("DUCK")) ||
-                                    (properties[0].equals("SUNNY") && properties[1].equals("SQUARE")) ||
-                                    (properties[0].equals("SQUARE") && properties[1].equals("SUNNY"))) {
-                                System.out.println(ERROR_MESSAGES[4].formatted(Arrays.toString(properties)));
-                                return;
+                            for (String[] strings: impossible) {
+                                if (Arrays.toString(properties).contains(strings[0]) &&
+                                        Arrays.toString(properties).contains(strings[1])) {
+                                    System.out.println(ERROR_MESSAGES[4].formatted(Arrays.toString(strings)));
+                                    return;
+                                }
                             }
                             propertiesOf(number, count, properties);
                             return;
-                        } else if (AVAILABLE_PROPERTIES.contains(properties[0])) {
-                            System.out.println(ERROR_MESSAGES[2].formatted(properties[1]));
-                        } else if (AVAILABLE_PROPERTIES.contains(properties[1])) {
-                            System.out.println(ERROR_MESSAGES[2].formatted(properties[0]));
+                        }
+                        ArrayList<String> propertiesWithMistakes = new ArrayList<>();
+                        for (String property: properties) {
+                            if (!AVAILABLE_PROPERTIES.contains(property)) {
+                                propertiesWithMistakes.add(property);
+                            }
+                        }
+                        if (propertiesWithMistakes.size() == 1) {
+                            System.out.println(ERROR_MESSAGES[2].formatted(propertiesWithMistakes.get(0)));
                         } else {
-                            System.out.println(ERROR_MESSAGES[3].formatted(Arrays.toString(properties)));
+                            System.out.println(ERROR_MESSAGES[3].formatted(propertiesWithMistakes.toString()));
                         }
                         return;
                     }
@@ -163,6 +177,7 @@ public class Main {
         System.out.println("         spy: " + isSpy(number));
         System.out.println("      square: " + isSquare(number));
         System.out.println("       sunny: " + isSunny(number));
+        System.out.println("     jumping: " + isJumping(number));
         System.out.println("        even: " + isEven(number));
         System.out.println("         odd: " + isOdd(number));
     }
@@ -190,6 +205,9 @@ public class Main {
             }
             if (isSunny(number)) {
                 System.out.print("sunny, ");
+            }
+            if (isJumping(number)) {
+                System.out.print("jumping, ");
             }
             if (isEven(number)) {
                 System.out.print("even\n");
@@ -223,6 +241,9 @@ public class Main {
                 break;
             case "sunny":
                 isTrue = isSunny(number);
+                break;
+            case "jumping":
+                isTrue = isJumping(number);
                 break;
             case "even":
                 isTrue = isEven(number);
@@ -259,6 +280,9 @@ public class Main {
                 if (isSunny(number)) {
                     System.out.print("sunny, ");
                 }
+                if (isJumping(number)) {
+                    System.out.print("jumping, ");
+                }
                 if (isEven(number)) {
                     System.out.print("even\n");
                 } else {
@@ -270,7 +294,8 @@ public class Main {
     }
 
     public static boolean is(long number, String[] properties) {
-        ArrayList<Boolean> isTrue = new ArrayList<>();
+//        ArrayList<Boolean> isTrue = new ArrayList<>();
+        HashSet<Boolean> isTrue = new HashSet<>();
         for (String property: properties) {
             switch (property.toLowerCase()) {
                 case "buzz":
@@ -294,6 +319,9 @@ public class Main {
                 case "sunny":
                     isTrue.add(isSunny(number));
                     break;
+                case "jumping":
+                    isTrue.add(isJumping(number));
+                    break;
                 case "even":
                     isTrue.add(isEven(number));
                     break;
@@ -302,7 +330,7 @@ public class Main {
                     break;
             }
         }
-        return isTrue.get(0) && isTrue.get(1);
+        return !isTrue.contains(false);
     }
 
     public static void propertiesOf(long number, long n, String[] properties) {
@@ -329,6 +357,9 @@ public class Main {
                 }
                 if (isSunny(number)) {
                     System.out.print("sunny, ");
+                }
+                if (isJumping(number)) {
+                    System.out.print("jumping, ");
                 }
                 if (isEven(number)) {
                     System.out.print("even\n");
@@ -409,6 +440,18 @@ public class Main {
             return true;
         }
         return false;
+    }
+
+    public static boolean isJumping(long number) {
+        long tmp;
+        while (number > 10) {
+            tmp = number % 10;
+            number /= 10;
+            if (Math.abs(tmp - number % 10) != 1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void main(String[] args) {
